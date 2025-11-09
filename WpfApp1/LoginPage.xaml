@@ -1,0 +1,52 @@
+﻿<Page x:Class="WpfApp1.LoginPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+      xmlns:local="clr-namespace:WpfApp1"
+      mc:Ignorable="d" 
+      d:DesignHeight="400" d:DesignWidth="350"
+      Title="LoginPage">
+
+    <Grid Margin="20">
+        <StackPanel>
+            <!-- Заголовок -->
+            <TextBlock Text="Вход в систему" 
+                   FontSize="24" 
+                   HorizontalAlignment="Center" 
+                   Margin="0,0,0,30"
+                   Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+
+            <!-- Email -->
+            <TextBox x:Name="EmailTextBox" 
+                 materialDesign:HintAssist.Hint="Email" 
+                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                 Margin="0,10"/>
+
+            <!-- Пароль -->
+            <PasswordBox x:Name="PasswordBox" 
+                     materialDesign:HintAssist.Hint="Пароль" 
+                     Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                     Margin="0,10"/>
+
+            <!-- Кнопки -->
+            <Button x:Name="LoginButton" 
+                Content="Войти" 
+                Command="{Binding LoginCommand}"
+                Style="{StaticResource MaterialDesignRaisedButton}"
+                Margin="0,20,0,10"
+                Height="40" Click="LoginButton_Click"/>
+            <Button Content="Регистрация" 
+                Style="{StaticResource MaterialDesignOutlinedButton}"
+                Height="40" Click="Button_Click"/>
+
+            <!-- Прогресс бар -->
+            <ProgressBar x:Name="AuthProgress" 
+                     Style="{StaticResource MaterialDesignCircularProgressBar}"
+                     Value="0" 
+                     Visibility="Collapsed"
+                     Margin="0,10"/>
+        </StackPanel>
+    </Grid>
+</Page>
