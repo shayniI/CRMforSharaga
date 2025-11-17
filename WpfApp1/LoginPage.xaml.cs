@@ -1,23 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace WpfApp1
 {
-    /// <summary>
-    /// Логика взаимодействия для LoginPage.xaml
-    /// </summary>
     public partial class LoginPage : Page
     {
         public LoginPage()
@@ -29,19 +15,31 @@ namespace WpfApp1
         {
             try
             {
-                UserData.SetSession(await App._Supabase!.Auth.SignIn(EmailTextBox.Text!, PasswordBox.Password!));
-                if (UserData.GetSession().User != null) MessageBox.Show("Отлично");
+                var session = await App._Supabase!.Auth.SignIn(EmailTextBox.Text!, PasswordBox.Password!);
+
+                // Явно проверяем результат аутентификации до доступа к свойствам
+                if (session == null || session.User == null)
+                {
+                    MessageBox.Show("Не удалось войти. Проверьте email/пароль.");
+                    return;
+                }
+
+                UserData.SetSession(session);
+
+                // Надёжно получаем uid из установленной сессии
+                var uid = session.User.Id;
+                var profile = await SupabaseController.GetProfileAsync(uid);
+                UserData.SetProfile(profile);
+
+                var window = new MainWindow();
+                window.Show();
+                Application.Current.MainWindow.Close();
             }
-            catch
+            catch (Exception ex)
             {
-                MessageBox.Show("Неверные данные");
+                // Показываем реальную ошибку для диагностики, не пряча её общим сообщением
+                MessageBox.Show("Ошибка авторизации: " + ex.Message);
             }
-
-        }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-
         }
     }
 }

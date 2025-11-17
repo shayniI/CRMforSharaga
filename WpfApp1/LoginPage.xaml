@@ -37,9 +37,6 @@
                 Style="{StaticResource MaterialDesignRaisedButton}"
                 Margin="0,20,0,10"
                 Height="40" Click="LoginButton_Click"/>
-            <Button Content="Регистрация" 
-                Style="{StaticResource MaterialDesignOutlinedButton}"
-                Height="40" Click="Button_Click"/>
 
             <!-- Прогресс бар -->
             <ProgressBar x:Name="AuthProgress" 
