@@ -18,12 +18,11 @@ namespace WpfApp1
             Profile = null;
         }
 
-        // Возвращаем прикладную роль из profiles; fallback — роль из auth (authenticated / anon)
         public static string? GetRole()
         {
             if (!string.IsNullOrEmpty(Profile?.Role))
                 return Profile!.Role;
-            return Session?.User?.Role; // это будет "authenticated" по умолчанию у вошедшего
+            return Session?.User?.Role;
         }
     }
 }

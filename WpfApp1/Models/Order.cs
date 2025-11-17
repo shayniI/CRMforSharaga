@@ -9,7 +9,7 @@ namespace WpfApp1.Models
     public class Order : BaseModel
     {
         [PrimaryKey("id")]
-        public string Id { get; set; } = null!;
+        public string? Id { get; set; }
 
         [Column("client_id")]
         public string? ClientId { get; set; }
@@ -26,8 +26,8 @@ namespace WpfApp1.Models
         [Column("updated_at")]
         public DateTime? UpdatedAt { get; set; }
 
-        // Опционально: при запросе с join поле items может заполняться
-        [Column("items")]
+        [System.Runtime.Serialization.IgnoreDataMember]
+        [JsonIgnore]
         public List<OrderItem>? Items { get; set; }
     }
 }

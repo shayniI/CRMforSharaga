@@ -38,7 +38,17 @@ namespace WpfApp1.Pages
                 Header = "Продажная",
                 Binding = new System.Windows.Data.Binding("Price") { StringFormat = "C" }
             });
+            _grid.MouseDoubleClick += async (s, e) => { if (_grid.SelectedItem is Product product) await EditProductAsync(product); };
             sp.Children.Add(_grid);
+
+            var actionToolbar = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 0) };
+            var editBtn = new Button { Content = "Редактировать", Width = 150, Margin = new Thickness(0, 0, 8, 0) };
+            editBtn.Click += async (s, e) => { if (_grid.SelectedItem is Product product) await EditProductAsync(product); };
+            var deleteBtn = new Button { Content = "Удалить", Width = 150 };
+            deleteBtn.Click += async (s, e) => { if (_grid.SelectedItem is Product product) await DeleteProductAsync(product); };
+            actionToolbar.Children.Add(editBtn);
+            actionToolbar.Children.Add(deleteBtn);
+            sp.Children.Add(actionToolbar);
 
             Content = sp;
             Loaded += ProductsPage_Loaded;
@@ -69,7 +79,7 @@ namespace WpfApp1.Pages
 
         private async Task AddProductAsync()
         {
-            var dlg = new Window { Title = "Новый товар", Width = 420, Height = 380, WindowStartupLocation = WindowStartupLocation.CenterOwner, Owner = Application.Current.MainWindow };
+            var dlg = new Window { Title = "Новый товар", Width = 420, Height = 380, WindowStartupLocation = WindowStartupLocation.CenterScreen };
             var sp = new StackPanel { Margin = new Thickness(12) };
             var sku = new TextBox { Margin = new Thickness(0,0,0,8) };
             sku.GotFocus += (s, e) => { if (sku.Text == "Артикул") sku.Text = ""; };
@@ -99,13 +109,46 @@ namespace WpfApp1.Pages
             var save = new Button { Content = "Сохранить", Width = 100 };
             save.Click += async (s, e) =>
             {
-                if (!decimal.TryParse(cost.Text, out var c)) c = 0;
-                if (!decimal.TryParse(price.Text, out var p)) p = 0;
-                if (!int.TryParse(stock.Text, out var st)) st = 0;
-                var product = new Product { Sku = sku.Text, Name = name.Text, Stock = st, Cost = c, Price = p };
-                await SupabaseController.CreateProductAsync(product);
-                dlg.Close();
-                await LoadProductsAsync();
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(name.Text) || name.Text == "Наименование")
+                    {
+                        MessageBox.Show("Укажите наименование товара.");
+                        return;
+                    }
+
+                    if (!decimal.TryParse(cost.Text == "Закупочная цена" ? "0" : cost.Text, out var c)) c = 0;
+                    if (!decimal.TryParse(price.Text == "Продажная цена" ? "0" : price.Text, out var p)) p = 0;
+                    if (!int.TryParse(stock.Text == "Остаток" ? "0" : stock.Text, out var st)) st = 0;
+                    
+                    var product = new Product 
+                    { 
+                        Id = Guid.NewGuid().ToString(),
+                        Sku = sku.Text == "Артикул" ? null : sku.Text, 
+                        Name = name.Text, 
+                        Stock = st, 
+                        Cost = c, 
+                        Price = p,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    
+                    var created = await SupabaseController.CreateProductAsync(product);
+                    if (created == null)
+                    {
+                        MessageBox.Show("Ошибка создания товара.");
+                        return;
+                    }
+                    
+                    dlg.Close();
+                    await LoadProductsAsync();
+                }
+                catch (Exception ex)
+                {
+                    var errorMsg = ex.Message;
+                    if (ex.InnerException != null)
+                        errorMsg += "\n" + ex.InnerException.Message;
+                    MessageBox.Show("Ошибка при создании товара: " + errorMsg, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             };
             sp.Children.Add(sku);
             sp.Children.Add(name);
@@ -115,6 +158,64 @@ namespace WpfApp1.Pages
             sp.Children.Add(save);
             dlg.Content = sp;
             dlg.ShowDialog();
+        }
+
+        private async Task EditProductAsync(Product product)
+        {
+            var dlg = new Window { Title = "Редактировать товар", Width = 420, Height = 380, WindowStartupLocation = WindowStartupLocation.CenterScreen };
+            var sp = new StackPanel { Margin = new Thickness(12) };
+            var sku = new TextBox { Text = product.Sku ?? "", Margin = new Thickness(0, 0, 0, 8) };
+            var name = new TextBox { Text = product.Name ?? "", Margin = new Thickness(0, 0, 0, 8) };
+            var stock = new TextBox { Text = product.Stock.ToString(), Margin = new Thickness(0, 0, 0, 8) };
+            var cost = new TextBox { Text = product.Cost.ToString(), Margin = new Thickness(0, 0, 0, 8) };
+            var price = new TextBox { Text = product.Price.ToString(), Margin = new Thickness(0, 0, 0, 8) };
+
+            var save = new Button { Content = "Сохранить", Width = 100 };
+            save.Click += async (s, e) =>
+            {
+                if (!decimal.TryParse(cost.Text, out var c)) c = product.Cost;
+                if (!decimal.TryParse(price.Text, out var p)) p = product.Price;
+                if (!int.TryParse(stock.Text, out var st)) st = product.Stock;
+                product.Sku = sku.Text;
+                product.Name = name.Text;
+                product.Stock = st;
+                product.Cost = c;
+                product.Price = p;
+                await SupabaseController.UpdateProductAsync(product);
+                dlg.Close();
+                await LoadProductsAsync();
+            };
+            sp.Children.Add(new TextBlock { Text = "Артикул", Margin = new Thickness(0, 0, 0, 4) });
+            sp.Children.Add(sku);
+            sp.Children.Add(new TextBlock { Text = "Наименование", Margin = new Thickness(0, 4, 0, 4) });
+            sp.Children.Add(name);
+            sp.Children.Add(new TextBlock { Text = "Остаток", Margin = new Thickness(0, 4, 0, 4) });
+            sp.Children.Add(stock);
+            sp.Children.Add(new TextBlock { Text = "Закупочная цена", Margin = new Thickness(0, 4, 0, 4) });
+            sp.Children.Add(cost);
+            sp.Children.Add(new TextBlock { Text = "Продажная цена", Margin = new Thickness(0, 4, 0, 4) });
+            sp.Children.Add(price);
+            sp.Children.Add(save);
+            dlg.Content = sp;
+            dlg.ShowDialog();
+        }
+
+        private async Task DeleteProductAsync(Product product)
+        {
+            var result = MessageBox.Show($"Вы уверены, что хотите удалить товар {product.Name}?", "Подтверждение удаления", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    await SupabaseController.DeleteProductAsync(product.Id);
+                    await LoadProductsAsync();
+                    MessageBox.Show("Товар удалён.");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Ошибка при удалении: " + ex.Message);
+                }
+            }
         }
     }
 }

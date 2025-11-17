@@ -8,7 +8,7 @@ namespace WpfApp1.Models
     public class OrderItem : BaseModel
     {
         [PrimaryKey("id")]
-        public string Id { get; set; } = null!;
+        public string? Id { get; set; }
 
         [Column("order_id")]
         public string OrderId { get; set; } = null!;
@@ -25,7 +25,8 @@ namespace WpfApp1.Models
         [Column("unit_price")]
         public decimal UnitPrice { get; set; }
 
-        [Column("total")]
+        [System.Runtime.Serialization.IgnoreDataMember]
+        [JsonIgnore]
         public decimal Total { get; set; }
     }
 }

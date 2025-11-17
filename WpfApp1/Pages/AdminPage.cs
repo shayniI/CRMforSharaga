@@ -24,7 +24,6 @@ namespace WpfApp1.Pages
             sp.Children.Add(new TextBlock { Text = "Администрирование пользователей", FontSize = 18, FontWeight = FontWeights.SemiBold });
             sp.Children.Add(new TextBlock { Text = "Назначение роли пользователю (user / admin)", Margin = new Thickness(0,8,0,8) });
 
-            // Метка над полем ввода вместо наложенного TextBlock с отрицательным отступом
             var userLabel = new TextBlock
             {
                 Text = "User ID (UUID из auth.users)",
@@ -43,7 +42,6 @@ namespace WpfApp1.Pages
             _applyBtn.Click += async (s, e) => await ApplyRoleAsync();
             sp.Children.Add(_applyBtn);
 
-            // --- Блок создания нового пользователя ---
             sp.Children.Add(new TextBlock { Text = "Создать нового пользователя", FontSize = 16, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0,8,0,4) });
 
             sp.Children.Add(new TextBlock { Text = "Email", Margin = new Thickness(0,4,0,2) });
@@ -95,7 +93,6 @@ namespace WpfApp1.Pages
             }
         }
 
-        // В обработчике создания пользователя показываем подробный ответ
         private async Task CreateUserAsync(ComboBox roleBox)
         {
             var email = _emailBox.Text?.Trim();

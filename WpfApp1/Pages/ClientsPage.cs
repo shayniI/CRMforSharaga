@@ -29,7 +29,17 @@ namespace WpfApp1.Pages
             _grid.Columns.Add(new DataGridTextColumn { Header = "Телефон", Binding = new System.Windows.Data.Binding("Phone") });
             _grid.Columns.Add(new DataGridTextColumn { Header = "Email", Binding = new System.Windows.Data.Binding("Email") });
             _grid.Columns.Add(new DataGridTextColumn { Header = "Адрес", Binding = new System.Windows.Data.Binding("Address") });
+            _grid.MouseDoubleClick += async (s, e) => { if (_grid.SelectedItem is Client client) await EditClientAsync(client); };
             sp.Children.Add(_grid);
+
+            var actionToolbar = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 0) };
+            var editBtn = new Button { Content = "Редактировать", Width = 150, Margin = new Thickness(0, 0, 8, 0) };
+            editBtn.Click += async (s, e) => { if (_grid.SelectedItem is Client client) await EditClientAsync(client); };
+            var deleteBtn = new Button { Content = "Удалить", Width = 150 };
+            deleteBtn.Click += async (s, e) => { if (_grid.SelectedItem is Client client) await DeleteClientAsync(client); };
+            actionToolbar.Children.Add(editBtn);
+            actionToolbar.Children.Add(deleteBtn);
+            sp.Children.Add(actionToolbar);
 
             Content = sp;
             Loaded += ClientsPage_Loaded;
@@ -60,7 +70,7 @@ namespace WpfApp1.Pages
 
         private async Task AddClientAsync()
         {
-            var dlg = new Window { Title = "Новый клиент", Width = 400, Height = 300, WindowStartupLocation = WindowStartupLocation.CenterOwner, Owner = Application.Current.MainWindow };
+            var dlg = new Window { Title = "Новый клиент", Width = 400, Height = 300, WindowStartupLocation = WindowStartupLocation.CenterScreen };
             var sp = new StackPanel { Margin = new Thickness(12) };
             var name = new TextBox { Margin = new Thickness(0,0,0,8) };
             name.GotFocus += (s, e) => { if (name.Text == "ФИО") name.Text = ""; };
@@ -85,10 +95,41 @@ namespace WpfApp1.Pages
             var save = new Button { Content = "Сохранить", Width = 100 };
             save.Click += async (s, e) =>
             {
-                var client = new Client { FullName = name.Text, Phone = phone.Text, Email = email.Text, Address = addr.Text };
-                await SupabaseController.CreateClientAsync(client);
-                dlg.Close();
-                await LoadClientsAsync();
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(name.Text) || name.Text == "ФИО")
+                    {
+                        MessageBox.Show("Укажите ФИО клиента.");
+                        return;
+                    }
+
+                    var client = new Client 
+                    { 
+                        Id = Guid.NewGuid().ToString(),
+                        FullName = name.Text, 
+                        Phone = phone.Text == "Телефон" ? null : phone.Text, 
+                        Email = email.Text == "Email" ? null : email.Text, 
+                        Address = addr.Text == "Адрес" ? null : addr.Text,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    
+                    var created = await SupabaseController.CreateClientAsync(client);
+                    if (created == null)
+                    {
+                        MessageBox.Show("Ошибка создания клиента.");
+                        return;
+                    }
+                    
+                    dlg.Close();
+                    await LoadClientsAsync();
+                }
+                catch (Exception ex)
+                {
+                    var errorMsg = ex.Message;
+                    if (ex.InnerException != null)
+                        errorMsg += "\n" + ex.InnerException.Message;
+                    MessageBox.Show("Ошибка при создании клиента: " + errorMsg, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             };
             sp.Children.Add(name);
             sp.Children.Add(phone);
@@ -97,6 +138,57 @@ namespace WpfApp1.Pages
             sp.Children.Add(save);
             dlg.Content = sp;
             dlg.ShowDialog();
+        }
+
+        private async Task EditClientAsync(Client client)
+        {
+            var dlg = new Window { Title = "Редактировать клиента", Width = 400, Height = 300, WindowStartupLocation = WindowStartupLocation.CenterScreen };
+            var sp = new StackPanel { Margin = new Thickness(12) };
+            var name = new TextBox { Text = client.FullName ?? "", Margin = new Thickness(0, 0, 0, 8) };
+            var phone = new TextBox { Text = client.Phone ?? "", Margin = new Thickness(0, 0, 0, 8) };
+            var email = new TextBox { Text = client.Email ?? "", Margin = new Thickness(0, 0, 0, 8) };
+            var addr = new TextBox { Text = client.Address ?? "", Margin = new Thickness(0, 0, 0, 8) };
+
+            var save = new Button { Content = "Сохранить", Width = 100 };
+            save.Click += async (s, e) =>
+            {
+                client.FullName = name.Text;
+                client.Phone = phone.Text;
+                client.Email = email.Text;
+                client.Address = addr.Text;
+                await SupabaseController.UpdateClientAsync(client);
+                dlg.Close();
+                await LoadClientsAsync();
+            };
+            sp.Children.Add(new TextBlock { Text = "ФИО", Margin = new Thickness(0, 0, 0, 4) });
+            sp.Children.Add(name);
+            sp.Children.Add(new TextBlock { Text = "Телефон", Margin = new Thickness(0, 4, 0, 4) });
+            sp.Children.Add(phone);
+            sp.Children.Add(new TextBlock { Text = "Email", Margin = new Thickness(0, 4, 0, 4) });
+            sp.Children.Add(email);
+            sp.Children.Add(new TextBlock { Text = "Адрес", Margin = new Thickness(0, 4, 0, 4) });
+            sp.Children.Add(addr);
+            sp.Children.Add(save);
+            dlg.Content = sp;
+            dlg.ShowDialog();
+        }
+
+        private async Task DeleteClientAsync(Client client)
+        {
+            var result = MessageBox.Show($"Вы уверены, что хотите удалить клиента {client.FullName}?", "Подтверждение удаления", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    await SupabaseController.DeleteClientAsync(client.Id);
+                    await LoadClientsAsync();
+                    MessageBox.Show("Клиент удалён.");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Ошибка при удалении: " + ex.Message);
+                }
+            }
         }
     }
 }   

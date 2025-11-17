@@ -14,7 +14,6 @@ namespace WpfApp1
             InitializeComponent();
             Loaded += MainWindow_Loaded;
             MainFrame.Navigate(new DashboardPage());
-            // Попытка прочитать цвет из ресурсов темы; если нет — fallback
             try
             {
                 _menuForeground = (Brush)Application.Current.Resources["MaterialDesignBody"]!;
@@ -36,7 +35,7 @@ namespace WpfApp1
                     if (profile != null) UserData.SetProfile(profile);
                 }
             }
-            catch { /* ignore */ }
+            catch { }
 
             BuildMenu();
         }

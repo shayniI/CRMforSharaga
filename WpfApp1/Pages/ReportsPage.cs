@@ -42,7 +42,7 @@ namespace WpfApp1.Pages
                 var today = DateTime.Now;
                 var daily = await SupabaseController.GetDailyRevenueAsync(today);
                 var monthly = await SupabaseController.GetMonthlyProfitAsync(today.Year, today.Month);
-                var popular = await SupabaseController.GetPopularProductsAsync(5);
+                var popular = await SupabaseController.GetPopularProductsWithNamesAsync(5);
 
                 _dailyRevenue.Text = $"Ежедневная выручка ({today:dd.MM.yyyy}): {daily:C}";
                 _monthlyProfit.Text = $"Месячная прибыль ({today:MMMM yyyy}): {monthly:C}";
@@ -50,8 +50,8 @@ namespace WpfApp1.Pages
                 if (popular.Length == 0) _popular.Text = "Популярные товары: отсутствуют данные";
                 else
                 {
-                    var ids = string.Join(", ", popular.Select(p => $"{p.productId} ({p.count})"));
-                    _popular.Text = "Популярные товары (id (кол-во)): " + ids;
+                    var items = string.Join(", ", popular.Select(p => $"{p.productName} ({p.count} шт.)"));
+                    _popular.Text = "Популярные товары: " + items;
                 }
             }
             catch (Exception ex)

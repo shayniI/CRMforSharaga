@@ -17,7 +17,6 @@ namespace WpfApp1
             {
                 var session = await App._Supabase!.Auth.SignIn(EmailTextBox.Text!, PasswordBox.Password!);
 
-                // Явно проверяем результат аутентификации до доступа к свойствам
                 if (session == null || session.User == null)
                 {
                     MessageBox.Show("Не удалось войти. Проверьте email/пароль.");
@@ -26,7 +25,6 @@ namespace WpfApp1
 
                 UserData.SetSession(session);
 
-                // Надёжно получаем uid из установленной сессии
                 var uid = session.User.Id;
                 var profile = await SupabaseController.GetProfileAsync(uid);
                 UserData.SetProfile(profile);
@@ -37,7 +35,6 @@ namespace WpfApp1
             }
             catch (Exception ex)
             {
-                // Показываем реальную ошибку для диагностики, не пряча её общим сообщением
                 MessageBox.Show("Ошибка авторизации: " + ex.Message);
             }
         }
