@@ -31,12 +31,12 @@ namespace WpfApp1.Pages
             _grid.Columns.Add(new DataGridTextColumn
             {
                 Header = "Закупочная",
-                Binding = new System.Windows.Data.Binding("Cost") { StringFormat = "C" }
+                Binding = new System.Windows.Data.Binding("Cost")
             });
             _grid.Columns.Add(new DataGridTextColumn
             {
                 Header = "Продажная",
-                Binding = new System.Windows.Data.Binding("Price") { StringFormat = "C" }
+                Binding = new System.Windows.Data.Binding("Price")
             });
             _grid.MouseDoubleClick += async (s, e) => { if (_grid.SelectedItem is Product product) await EditProductAsync(product); };
             sp.Children.Add(_grid);

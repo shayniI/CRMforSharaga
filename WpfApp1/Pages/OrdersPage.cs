@@ -48,7 +48,7 @@ namespace WpfApp1.Pages
             _grid.Columns.Add(new DataGridTextColumn { Header = "Клиент", Binding = new System.Windows.Data.Binding("ClientName") });
             _grid.Columns.Add(new DataGridTextColumn { Header = "Статус", Binding = new System.Windows.Data.Binding("Status") });
             var totalColumn = new DataGridTextColumn { Header = "Сумма" };
-            var totalBinding = new System.Windows.Data.Binding("Total") { StringFormat = "C" };
+            var totalBinding = new System.Windows.Data.Binding("Total");
             totalColumn.Binding = totalBinding;
             _grid.Columns.Add(totalColumn);
             _grid.Columns.Add(new DataGridTextColumn { Header = "Создан", Binding = new System.Windows.Data.Binding("CreatedAt") });
@@ -169,8 +169,8 @@ namespace WpfApp1.Pages
             };
             itemsGrid.Columns.Add(new DataGridTextColumn { Header = "Товар", Binding = new System.Windows.Data.Binding("Product.Name") });
             itemsGrid.Columns.Add(new DataGridTextColumn { Header = "Количество", Binding = new System.Windows.Data.Binding("Quantity") });
-            itemsGrid.Columns.Add(new DataGridTextColumn { Header = "Цена", Binding = new System.Windows.Data.Binding("UnitPrice") { StringFormat = "C" } });
-            itemsGrid.Columns.Add(new DataGridTextColumn { Header = "Сумма", Binding = new System.Windows.Data.Binding("Total") { StringFormat = "C" } });
+            itemsGrid.Columns.Add(new DataGridTextColumn { Header = "Цена", Binding = new System.Windows.Data.Binding("UnitPrice") });
+            itemsGrid.Columns.Add(new DataGridTextColumn { Header = "Сумма", Binding = new System.Windows.Data.Binding("Total") });
             mainSp.Children.Add(itemsGrid);
 
             var totalText = new TextBlock
@@ -303,8 +303,15 @@ namespace WpfApp1.Pages
                             Quantity = item.Quantity,
                             UnitPrice = item.UnitPrice
                         };
-                        await SupabaseController.CreateOrderItemAsync(orderItem);
-
+                        var result = await SupabaseController.CreateOrderItemAsync(orderItem);
+                        var invoice = new Invoice 
+                        {
+                            OrderId = result?.OrderId,
+                            IssuedTo = order.ClientId,
+                            Amount = orderItems.Sum(i=>i.Total),
+                            CreatedAt = DateTime.Now
+                        };
+                        await SupabaseController.CreateInvoiceAsync(invoice);
                         var newStock = item.Product.Stock - item.Quantity;
                         if (newStock >= 0)
                         {
@@ -361,7 +368,7 @@ namespace WpfApp1.Pages
             }
 
             sp.Children.Add(new TextBlock { Text = $"Статус: {order.Status}", Margin = new Thickness(0, 0, 0, 4) });
-            sp.Children.Add(new TextBlock { Text = $"Сумма: {order.Total:C}", Margin = new Thickness(0, 0, 0, 8) });
+            sp.Children.Add(new TextBlock { Text = $"Сумма: {order.Total}", Margin = new Thickness(0, 0, 0, 8) });
 
             sp.Children.Add(new TextBlock { Text = "Товары:", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 4) });
 
@@ -373,8 +380,8 @@ namespace WpfApp1.Pages
             };
             itemsGrid.Columns.Add(new DataGridTextColumn { Header = "Товар", Binding = new System.Windows.Data.Binding("Description") });
             itemsGrid.Columns.Add(new DataGridTextColumn { Header = "Количество", Binding = new System.Windows.Data.Binding("Quantity") });
-            itemsGrid.Columns.Add(new DataGridTextColumn { Header = "Цена", Binding = new System.Windows.Data.Binding("UnitPrice") { StringFormat = "C" } });
-            itemsGrid.Columns.Add(new DataGridTextColumn { Header = "Сумма", Binding = new System.Windows.Data.Binding("Total") { StringFormat = "C" } });
+            itemsGrid.Columns.Add(new DataGridTextColumn { Header = "Цена", Binding = new System.Windows.Data.Binding("UnitPrice")});
+            itemsGrid.Columns.Add(new DataGridTextColumn { Header = "Сумма", Binding = new System.Windows.Data.Binding("Total")});
 
             if (items != null)
             {

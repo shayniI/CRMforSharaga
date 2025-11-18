@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Supabase;
 using WpfApp1.Models;
+using Supabase.Postgrest.Attributes;
 
 namespace WpfApp1
 {
@@ -80,7 +81,7 @@ namespace WpfApp1
 
         public static async Task<bool> UpdateProductStockAsync(string productId, int newStock)
         {
-            var res = await App._Supabase!.From<Product>().Where(p => p.Id == productId).Update(new Product { Stock = newStock });
+            var res = await App._Supabase!.From<Product>().Where(p => p.Id == productId).Set(p=>p.Stock, newStock).Update();
             return res.Models != null;
         }
 
@@ -130,7 +131,7 @@ namespace WpfApp1
 
         public static async Task<OrderItem?> CreateOrderItemAsync(OrderItem item)
         {
-            item.Id = null;
+            //item.Id = null;
             var res = await App._Supabase!.From<OrderItem>().Insert(item);
             return res.Models.FirstOrDefault();
         }
@@ -179,7 +180,11 @@ namespace WpfApp1
                 return null;
             }
         }
-
+        public static async Task<Invoice?> CreateInvoiceAsync(Invoice invoice)
+        {
+            var res = await App._Supabase!.From<Invoice>().Insert(invoice);
+            return res.Models.FirstOrDefault();
+        }
         public static async Task<decimal> GetDailyRevenueAsync(DateTime day)
         {
             var invoices = await GetInvoicesAsync();
@@ -271,13 +276,18 @@ namespace WpfApp1
             }
         }
     }
-
+    [Table("invoices")]
     public class Invoice : Supabase.Postgrest.Models.BaseModel
     {
+        [PrimaryKey("id")]
         public string Id { get; set; } = null!;
+        [Column("order_id")]
         public string? OrderId { get; set; }
+        [Column("issued_to")]
         public string? IssuedTo { get; set; }
+        [Column("amount")]
         public decimal Amount { get; set; }
+        [Column("created_at")]
         public DateTime? CreatedAt { get; set; }
     }
 }

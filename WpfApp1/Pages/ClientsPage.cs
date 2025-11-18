@@ -4,7 +4,8 @@ using System.Collections.ObjectModel;
 using WpfApp1.Models;
 using System.Threading.Tasks;
 using System;
-
+using WpfApp1.Validators;
+using System.Windows.Data;
 namespace WpfApp1.Pages
 {
     public class ClientsPage : Page
@@ -67,7 +68,7 @@ namespace WpfApp1.Pages
                 MessageBox.Show("Ошибка загрузки клиентов: " + ex.Message);
             }
         }
-
+        private MainViewModel _viewModel;
         private async Task AddClientAsync()
         {
             var dlg = new Window { Title = "Новый клиент", Width = 400, Height = 300, WindowStartupLocation = WindowStartupLocation.CenterScreen };
@@ -76,11 +77,26 @@ namespace WpfApp1.Pages
             name.GotFocus += (s, e) => { if (name.Text == "ФИО") name.Text = ""; };
             name.LostFocus += (s, e) => { if (string.IsNullOrWhiteSpace(name.Text)) name.Text = "ФИО"; };
             name.Text = "ФИО";
-
+            
             var phone = new TextBox { Margin = new Thickness(0,0,0,8) };
             phone.GotFocus += (s, e) => { if (phone.Text == "Телефон") phone.Text = ""; };
             phone.LostFocus += (s, e) => { if (string.IsNullOrWhiteSpace(phone.Text)) phone.Text = "Телефон"; };
             phone.Text = "Телефон";
+            phone.MaxLength = 18;
+            _viewModel = new MainViewModel();
+            _viewModel.PhoneNumber = "7";
+
+            RussianPhoneNumberConverter convertor = new RussianPhoneNumberConverter();
+            this.DataContext = _viewModel;
+
+            Binding binding = new Binding("PhoneNumber")
+            {
+                Source = _viewModel,
+                Mode = BindingMode.TwoWay,
+                UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
+                Converter = convertor
+            };
+            phone.SetBinding(TextBox.TextProperty, binding);
 
             var email = new TextBox { Margin = new Thickness(0,0,0,8) };
             email.GotFocus += (s, e) => { if (email.Text == "Email") email.Text = ""; };
